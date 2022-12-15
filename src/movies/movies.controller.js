@@ -1,49 +1,47 @@
-const moviesService = require("./movies.service");
+const service = require("./movies.service");
 
-// MIDDLEWARE VALIDATORS //
-
-async function validateMovieId(req, res, next) {
-  try {
-    const { movieId } = req.params;
-    const movie = await moviesService.read(movieId);
-    if (movie) {
-      res.locals.movie = movie;
-      return next();
-    }
-    next({
-      status: 404,
-      message: "Movie cannot be found.",
-    });
-  } catch (error) {
-    next(error);
-  }
+function list(req, res, next) {
+  service
+    .list(req.query.is_showing)
+    .then((data) => res.json({ data }))
+    .catch(next);
+}
+//Validation function
+function exists(req, res, next) {
+  service
+    .read(req.params.movieId)
+    .then((movie) => {
+      if (movie) {
+        res.locals.movie = movie;
+        return next();
+      }
+      next({ status: 404, message: `Movie cannot be found.` });
+    })
+    .catch(next);
 }
 
-// HTTP METHODS //
-
-async function list(req, res, next) {
-  try {
-    const data = await moviesService.list(req.query.is_showing);
-    res.json({ data });
-  } catch (error) {
-    next(error);
-  }
+function read(req, res) {
+  const { movie: data } = res.locals;
+  res.json({ data });
 }
 
-async function read(req, res, next) {
-  try {
-    const { movieId } = req.params;
-    const data = await moviesService.read(movieId);
-    res.json({ data });
-  } catch (error) {
-    next(error);
-  }
+function listTheaters(req, res, next) {
+  service
+    .listTheaters(req.params.movieId)
+    .then((data) => res.json({ data }))
+    .catch(next);
 }
 
-// EXPORT //
+function listReviews(req, res, next) {
+  service
+    .listReviews(req.params.movieId)
+    .then((data) => res.json({ data }))
+    .catch(next);
+}
 
 module.exports = {
   list,
-  read: [validateMovieId, read],
-  validateMovieId,
+  read: [exists, read],
+  listTheaters,
+  listReviews,
 };
